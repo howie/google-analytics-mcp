@@ -1,28 +1,16 @@
-# Google Analytics 4 Admin MCP Server
+# GA4 Admin MCP Server
 
-> 🤖 Automate Google Analytics 4 configuration with Claude Code in 30 seconds
+> ⚠️ **Work in Progress** - Custom MCP server for Google Analytics 4 Admin operations
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
-[![MCP](https://img.shields.io/badge/MCP-0.5.0-green.svg)](https://modelcontextprotocol.io/)
+## 為什麼需要這個？
 
-**An MCP (Model Context Protocol) server that enables Claude Code to perform Google Analytics 4 Admin API operations through natural language.**
+官方 Google Analytics MCP (`googleanalytics/google-analytics-mcp`) 只提供**讀取**功能。
 
-## Why This Project?
-
-The official Google Analytics MCP (`googleanalytics/google-analytics-mcp`) only provides **read-only** functionality.
-
-This custom MCP server provides **write operations** for GA4 Admin API:
-- ✅ Create custom dimensions
-- ✅ Mark conversion events
-- ✅ List and manage GA4 configuration
-- 🔄 Create audiences (coming soon)
-- 🔄 Manage property settings (coming soon)
-
-**Time Comparison:**
-- Manual setup: 15 minutes
-- Python script: 2 minutes
-- **This MCP Server: 30 seconds** ⚡
+這個自訂 MCP server 提供 GA4 **Admin API** 的寫入功能：
+- ✅ 建立 custom dimensions
+- ✅ 標記 conversion events
+- ✅ 建立 audiences (未來)
+- ✅ 管理 property settings (未來)
 
 ## 快速開始
 
