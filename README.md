@@ -28,7 +28,7 @@ This custom MCP server provides **write operations** for GA4 Admin API:
 
 ## 📚 Complete Setup Guide
 
-**👉 [SETUP_TUTORIAL.md](./SETUP_TUTORIAL.md) - Complete step-by-step tutorial**
+**👉 [Complete Setup Tutorial](./docs/tutorial/SETUP_TUTORIAL.md) - Step-by-step guide**
 
 The tutorial covers:
 - ✅ Creating a Google Cloud service account
@@ -51,8 +51,8 @@ npm run build
 
 ### Configuration
 
-1. Create a service account and download JSON key ([detailed guide](./SETUP_TUTORIAL.md#step-1-create-google-cloud-service-account))
-2. Grant the service account Editor role in GA4 ([detailed guide](./SETUP_TUTORIAL.md#step-2-grant-ga4-property-access))
+1. Create a service account and download JSON key ([detailed guide](./docs/tutorial/SETUP_TUTORIAL.md#step-1-create-google-cloud-service-account))
+2. Grant the service account Editor role in GA4 ([detailed guide](./docs/tutorial/SETUP_TUTORIAL.md#step-2-grant-ga4-property-access))
 3. Configure Claude Code:
 
 Add to `~/.claude/settings.json`:

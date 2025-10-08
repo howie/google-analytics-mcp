@@ -134,14 +134,14 @@ We follow [Semantic Versioning](https://semver.org/):
 
 ## Links
 
-- [GitHub Repository](https://github.com/YOUR_ORG/ga4-admin-mcp) (to be published)
-- [Issue Tracker](https://github.com/YOUR_ORG/ga4-admin-mcp/issues)
-- [Pull Requests](https://github.com/YOUR_ORG/ga4-admin-mcp/pulls)
+- [GitHub Repository](https://github.com/howie/google-analytics-mcp)
+- [Issue Tracker](https://github.com/howie/google-analytics-mcp/issues)
+- [Pull Requests](https://github.com/howie/google-analytics-mcp/pulls)
 - [Google Analytics Admin API Docs](https://developers.google.com/analytics/devguides/config/admin/v1)
 - [MCP Protocol Specification](https://modelcontextprotocol.io/docs)
 
 ---
 
-**Maintained by**: Coachly Team
+**Maintained by**: GA4 Admin MCP Contributors
 **License**: MIT
-**Last Updated**: 2025-10-07
+**Last Updated**: 2025-10-08
