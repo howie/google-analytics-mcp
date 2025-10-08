@@ -38,17 +38,56 @@ async function getAuthClient() {
   return await auth.getClient();
 }
 
+// Convert measurement ID (G-XXXXXXXXX) to property ID
+async function resolvePropertyId(propertyId: string): Promise<string> {
+  // If already in properties/XXX format, return as-is
+  if (propertyId.startsWith("properties/")) {
+    return propertyId;
+  }
+
+  // If it's a measurement ID (G-XXXXXXXXX), look it up
+  if (propertyId.startsWith("G-")) {
+    const accounts = await analyticsadmin.accountSummaries.list();
+    const accountSummaries = accounts.data.accountSummaries || [];
+
+    for (const accountSummary of accountSummaries) {
+      const propertySummaries = accountSummary.propertySummaries || [];
+
+      for (const propertySummary of propertySummaries) {
+        const propertyName = propertySummary.property || "";
+
+        // Check data streams for this property
+        const streams = await analyticsadmin.properties.dataStreams.list({
+          parent: propertyName,
+        });
+
+        const dataStreams = streams.data.dataStreams || [];
+        for (const stream of dataStreams) {
+          if (stream.webStreamData?.measurementId === propertyId) {
+            return propertyName;
+          }
+        }
+      }
+    }
+
+    throw new Error(`No property found with measurement ID: ${propertyId}`);
+  }
+
+  // Otherwise, assume it's a numeric property ID
+  return `properties/${propertyId}`;
+}
+
 // Create MCP server
 const server = new Server(
   {
     name: "ga4-admin-server",
-    version: "0.1.0",
+    version: "0.1.1",
   },
   {
     capabilities: {
       tools: {},
     },
-  }
+  },
 );
 
 // List available tools
@@ -63,11 +102,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             propertyId: {
               type: "string",
-              description: "GA4 Property ID (e.g., 'G-859X61KC45' or '123456789')",
+              description:
+                "GA4 Property ID (e.g., 'G-859X61KC45' or '123456789')",
             },
             parameterName: {
               type: "string",
-              description: "Event parameter name (e.g., 'method', 'session_id')",
+              description:
+                "Event parameter name (e.g., 'method', 'session_id')",
             },
             displayName: {
               type: "string",
@@ -154,20 +195,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           scope = "EVENT",
         } = args as unknown as CreateCustomDimensionArgs;
 
-        // Convert property ID format if needed (G-XXXXXXXXX -> properties/XXXXXXXXX)
-        const propertyPath = propertyId.startsWith("properties/")
-          ? propertyId
-          : `properties/${propertyId.replace("G-", "")}`;
+        const propertyPath = await resolvePropertyId(propertyId);
 
-        const response = await analyticsadmin.properties.customDimensions.create({
-          parent: propertyPath,
-          requestBody: {
-            parameterName,
-            displayName,
-            description,
-            scope,
-          },
-        });
+        const response =
+          await analyticsadmin.properties.customDimensions.create({
+            parent: propertyPath,
+            requestBody: {
+              parameterName,
+              displayName,
+              description,
+              scope,
+            },
+          });
 
         return {
           content: [
@@ -180,7 +219,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                   dimension: response.data,
                 },
                 null,
-                2
+                2,
               ),
             },
           ],
@@ -188,18 +227,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "create_conversion_event": {
-        const { propertyId, eventName } = args as unknown as CreateConversionEventArgs;
+        const { propertyId, eventName } =
+          args as unknown as CreateConversionEventArgs;
 
-        const propertyPath = propertyId.startsWith("properties/")
-          ? propertyId
-          : `properties/${propertyId.replace("G-", "")}`;
+        const propertyPath = await resolvePropertyId(propertyId);
 
-        const response = await analyticsadmin.properties.conversionEvents.create({
-          parent: propertyPath,
-          requestBody: {
-            eventName,
-          },
-        });
+        const response =
+          await analyticsadmin.properties.conversionEvents.create({
+            parent: propertyPath,
+            requestBody: {
+              eventName,
+            },
+          });
 
         return {
           content: [
@@ -212,7 +251,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                   event: response.data,
                 },
                 null,
-                2
+                2,
               ),
             },
           ],
@@ -222,9 +261,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "list_custom_dimensions": {
         const { propertyId } = args as unknown as ListResourceArgs;
 
-        const propertyPath = propertyId.startsWith("properties/")
-          ? propertyId
-          : `properties/${propertyId.replace("G-", "")}`;
+        const propertyPath = await resolvePropertyId(propertyId);
 
         const response = await analyticsadmin.properties.customDimensions.list({
           parent: propertyPath,
@@ -249,7 +286,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                   })),
                 },
                 null,
-                2
+                2,
               ),
             },
           ],
@@ -259,9 +296,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "list_conversion_events": {
         const { propertyId } = args as unknown as ListResourceArgs;
 
-        const propertyPath = propertyId.startsWith("properties/")
-          ? propertyId
-          : `properties/${propertyId.replace("G-", "")}`;
+        const propertyPath = await resolvePropertyId(propertyId);
 
         const response = await analyticsadmin.properties.conversionEvents.list({
           parent: propertyPath,
@@ -285,7 +320,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                   })),
                 },
                 null,
-                2
+                2,
               ),
             },
           ],
@@ -307,7 +342,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               details: error.errors || error.response?.data,
             },
             null,
-            2
+            2,
           ),
         },
       ],

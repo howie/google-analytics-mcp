@@ -1,6 +1,6 @@
 {
   "name": "@coachly/ga4-admin-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for Google Analytics 4 Admin API - automate GA4 configuration with natural language",
   "type": "module",
   "main": "dist/index.js",
