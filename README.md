@@ -13,6 +13,7 @@
 The official Google Analytics MCP (`googleanalytics/google-analytics-mcp`) only provides **read-only** functionality.
 
 This custom MCP server provides **write operations** for GA4 Admin API:
+
 - ✅ Create custom dimensions
 - ✅ Mark conversion events
 - ✅ List and manage GA4 configuration
@@ -20,6 +21,7 @@ This custom MCP server provides **write operations** for GA4 Admin API:
 - 🔄 Manage property settings (coming soon)
 
 **Time Comparison:**
+
 - Manual setup: 15 minutes
 - Python script: 2 minutes
 - **This MCP Server: 30 seconds** ⚡
@@ -65,6 +67,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
 ## 可用工具
 
 ### 1. create_custom_dimension
+
 ```typescript
 {
   propertyId: "G-859X61KC45",
@@ -76,6 +79,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
 ```
 
 ### 2. create_conversion_event
+
 ```typescript
 {
   propertyId: "G-859X61KC45",
@@ -84,6 +88,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
 ```
 
 ### 3. list_custom_dimensions
+
 ```typescript
 {
   propertyId: "G-859X61KC45"
@@ -91,6 +96,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
 ```
 
 ### 4. list_conversion_events
+
 ```typescript
 {
   propertyId: "G-859X61KC45"
@@ -101,7 +107,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
 
 在 Claude Code 中:
 
-```
+```text
 幫我在 GA4 (G-859X61KC45) 建立以下自訂維度：
 1. method - 登入方式
 2. session_id - Session ID
@@ -120,6 +126,7 @@ Claude 會自動使用 MCP 工具完成設定。
 | **MCP Server** | 6 分鐘 | **30 秒** | **6.5 分鐘** | ✅✅ 極高 | ⭐⭐⭐⭐⭐ |
 
 **MCP Server 優勢**:
+
 - ⚡ 執行最快（30 秒）
 - 🔄 完全可重複
 - 🤖 自然語言操作
@@ -128,7 +135,7 @@ Claude 會自動使用 MCP 工具完成設定。
 
 ## 技術架構
 
-```
+```text
 Claude Code
     ↓ (MCP Protocol)
 GA4 Admin MCP Server
