@@ -26,27 +26,54 @@ This custom MCP server provides **write operations** for GA4 Admin API:
 - Python script: 2 minutes
 - **This MCP Server: 30 seconds** ⚡
 
-## 快速開始
+## 📚 Complete Setup Guide
 
-### 安裝
+**👉 [SETUP_TUTORIAL.md](./SETUP_TUTORIAL.md) - Complete step-by-step tutorial**
+
+The tutorial covers:
+- ✅ Creating a Google Cloud service account
+- ✅ Enabling the Analytics Admin API
+- ✅ Granting GA4 property access
+- ✅ Installing and configuring the MCP server
+- ✅ Testing your setup
+- ✅ Usage examples and best practices
+
+## Quick Start
+
+### Installation
 
 ```bash
-cd mcp-servers/ga4-admin
+git clone https://github.com/howie/google-analytics-mcp.git
+cd google-analytics-mcp
 npm install
 npm run build
 ```
 
-### 設定
+### Configuration
 
-1. 建立 service account 並下載 JSON key
-2. 在 GA4 中給予 service account Editor 權限
-3. 設定環境變數:
+1. Create a service account and download JSON key ([detailed guide](./SETUP_TUTORIAL.md#step-1-create-google-cloud-service-account))
+2. Grant the service account Editor role in GA4 ([detailed guide](./SETUP_TUTORIAL.md#step-2-grant-ga4-property-access))
+3. Configure Claude Code:
 
-```bash
-export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
+Add to `~/.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "ga4-admin": {
+      "command": "node",
+      "args": ["/path/to/google-analytics-mcp/dist/index.js"],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "/path/to/service-account-key.json"
+      }
+    }
+  }
+}
 ```
 
-### 在 Claude Code 中使用
+4. Restart Claude Code
+
+### Usage in Claude Code
 
 在 `~/.claude/settings.json` 加入:
 
