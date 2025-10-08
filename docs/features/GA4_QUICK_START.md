@@ -11,7 +11,7 @@
 | 維度名稱 | 事件參數 | 說明 |
 |---------|---------|------|
 | 登入方式 | `method` | email 或 google |
-| Session ID | `session_id` | 教練 session ID |
+| Session ID | `session_id` |  session ID |
 | 錯誤類型 | `error_type` | 上傳失敗原因 |
 | 快速開始步驟 | `step` | 步驟編號 1-4 |
 

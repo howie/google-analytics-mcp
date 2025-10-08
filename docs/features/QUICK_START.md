@@ -40,10 +40,10 @@ cd ../../terraform/scripts
     "ga4-admin": {
       "command": "node",
       "args": [
-        "/Users/howie/Workspace/github/coaching_transcript_tool/mcp-servers/ga4-admin/dist/index.js"
+        "/path/to/google-analytics-mcp/dist/index.js"
       ],
       "env": {
-        "GOOGLE_APPLICATION_CREDENTIALS": "/Users/howie/.config/gcp/ga4-admin-key.json"
+        "GOOGLE_APPLICATION_CREDENTIALS": "/path/to/service-account-key.json"
       }
     }
   }

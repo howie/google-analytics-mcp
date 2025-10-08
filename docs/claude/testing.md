@@ -359,7 +359,7 @@ Add this configuration:
     "ga4-admin": {
       "command": "node",
       "args": [
-        "/Users/howie/Workspace/github/google-analytics-mcp/dist/index.js"
+        "/path/to/google-analytics-mcp/dist/index.js"
       ],
       "env": {
         "GOOGLE_APPLICATION_CREDENTIALS": "/path/to/your/service-account-key.json"

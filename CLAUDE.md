@@ -249,7 +249,7 @@ Add to `~/.claude/settings.json`:
     "ga4-admin": {
       "command": "node",
       "args": [
-        "/Users/howie/Workspace/github/google-analytics-mcp/dist/index.js"
+        "/path/to/google-analytics-mcp/dist/index.js"
       ],
       "env": {
         "GOOGLE_APPLICATION_CREDENTIALS": "/path/to/service-account-key.json"
@@ -449,4 +449,4 @@ Always mark todos as completed immediately after finishing tasks.
 **Version**: 0.1.0
 **Status**: ✅ Phase 1 Complete - Ready for Manual Testing
 **Last Updated**: 2025-10-08
-**Maintainer**: Coachly Development Team
+**Maintainer**: GA4 Admin MCP Contributors
