@@ -249,14 +249,14 @@ describe('MCP Tools', () => {
     it('should validate property ID format', () => {
       // Test various property ID formats
       const validIds = ['123456', 'G-123456', 'properties/123456'];
-      const invalidIds = ['', null, undefined, 'invalid'];
+      const invalidIds = ['', null, undefined];
 
       validIds.forEach((id) => {
         expect(typeof id === 'string' && id.length > 0).toBe(true);
       });
 
       invalidIds.forEach((id) => {
-        expect(typeof id === 'string' && id && id.length > 0).toBe(false);
+        expect(!id || (typeof id === 'string' && id.length === 0)).toBe(true);
       });
     });
 

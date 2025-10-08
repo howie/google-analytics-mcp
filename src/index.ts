@@ -152,7 +152,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           displayName,
           description = "",
           scope = "EVENT",
-        } = args as CreateCustomDimensionArgs;
+        } = args as unknown as CreateCustomDimensionArgs;
 
         // Convert property ID format if needed (G-XXXXXXXXX -> properties/XXXXXXXXX)
         const propertyPath = propertyId.startsWith("properties/")
@@ -188,7 +188,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "create_conversion_event": {
-        const { propertyId, eventName } = args as CreateConversionEventArgs;
+        const { propertyId, eventName } = args as unknown as CreateConversionEventArgs;
 
         const propertyPath = propertyId.startsWith("properties/")
           ? propertyId
@@ -220,7 +220,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "list_custom_dimensions": {
-        const { propertyId } = args as ListResourceArgs;
+        const { propertyId } = args as unknown as ListResourceArgs;
 
         const propertyPath = propertyId.startsWith("properties/")
           ? propertyId
@@ -257,7 +257,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "list_conversion_events": {
-        const { propertyId } = args as ListResourceArgs;
+        const { propertyId } = args as unknown as ListResourceArgs;
 
         const propertyPath = propertyId.startsWith("properties/")
           ? propertyId
