@@ -329,19 +329,316 @@ npm run test:integration -- --verbose
 **Type**: Manual testing
 **Frequency**: Before releases, after major changes
 
-### Test Guide
+### Prerequisites
 
-**Documentation**: See `CLAUDE_CODE_INTEGRATION.md`
+**Environment Variables**:
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=~/.config/gcp/ga4-admin-key.json
+export GA4_TEST_PROPERTY_ID=123456789
+```
 
-**Test Scenarios** (8 total):
-1. ✅ List custom dimensions
-2. ✅ Create custom dimension
-3. ✅ Create conversion event
-4. ✅ List conversion events
-5. ❌ Error handling - Invalid property ID
-6. ❌ Error handling - Duplicate dimension
-7. 🤖 Natural language interaction
-8. 📦 Batch operations
+**Test Property Requirements**:
+- Dedicated test property (not production!)
+- Service account with Editor permissions
+- OK to create test resources (dimensions accumulate)
+
+### Setup Instructions
+
+#### Step 1: Configure Claude Code
+
+Edit your Claude Code settings file:
+
+**macOS/Linux**: `~/.claude/settings.json`
+**Windows**: `%APPDATA%\.claude\settings.json`
+
+Add this configuration:
+
+```json
+{
+  "mcpServers": {
+    "ga4-admin": {
+      "command": "node",
+      "args": [
+        "/Users/howie/Workspace/github/google-analytics-mcp/dist/index.js"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "/path/to/your/service-account-key.json"
+      }
+    }
+  }
+}
+```
+
+**Important**: Replace `/path/to/your/service-account-key.json` with your actual service account key path.
+
+#### Step 2: Prepare Service Account (if not done)
+
+If you don't have a service account yet:
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com)
+2. Navigate to **IAM & Admin** → **Service Accounts**
+3. Create a new service account:
+   - Name: `ga4-admin-mcp`
+   - Role: Not needed at GCP level
+4. Create and download JSON key
+5. Save to `~/.config/gcp/ga4-admin-key.json`
+6. In GA4, go to **Admin** → **Property Access Management**
+7. Add service account email with **Editor** role
+
+#### Step 3: Restart Claude Code
+
+Close and reopen Claude Code to load the new MCP server.
+
+### Verification Checklist
+
+#### ✅ Basic Connectivity
+
+Run these commands in Claude Code:
+
+**1. List available MCP servers:**
+```
+List all available MCP servers
+```
+Expected: Should see `ga4-admin` in the list
+
+**2. List tools:**
+```
+Show me all tools available from the ga4-admin MCP server
+```
+Expected output:
+- create_custom_dimension
+- create_conversion_event
+- list_custom_dimensions
+- list_conversion_events
+
+### Test Scenarios
+
+#### Test 1: List Custom Dimensions ✅
+
+**Command:**
+```
+Using the ga4-admin MCP server, list all custom dimensions for GA4 property 123456789
+```
+
+**Replace**: `123456789` with your actual GA4 property ID
+
+**Expected Behavior:**
+- Server responds with list of dimensions
+- Shows count and dimension details
+- No errors
+
+**Success Criteria:**
+- ✅ Response received
+- ✅ Valid JSON structure
+- ✅ Count matches GA4 console
+
+---
+
+#### Test 2: Create Custom Dimension ✅
+
+**Command:**
+```
+Using the ga4-admin MCP server, create a custom dimension:
+- Property ID: 123456789
+- Parameter name: test_dimension
+- Display name: Test Dimension
+- Description: This is a test dimension
+- Scope: EVENT
+```
+
+**Expected Behavior:**
+- Dimension created successfully
+- Returns dimension details with resource name
+- Visible in GA4 console immediately
+
+**Success Criteria:**
+- ✅ Success message received
+- ✅ Dimension appears in GA4 Admin → Custom Definitions
+- ✅ All properties match (name, scope, description)
+
+**Cleanup:**
+Note: Custom dimensions cannot be deleted via API, only archived manually in GA4 UI.
+
+---
+
+#### Test 3: Create Conversion Event ✅
+
+**Command:**
+```
+Using the ga4-admin MCP server, mark "test_conversion_event" as a conversion in GA4 property 123456789
+```
+
+**Expected Behavior:**
+- Event marked as conversion
+- Returns event details
+- Appears in GA4 conversions list
+
+**Success Criteria:**
+- ✅ Success message received
+- ✅ Event appears in GA4 Admin → Events (marked as conversion)
+- ✅ Can be toggled off in GA4 UI
+
+**Cleanup:**
+You can delete the conversion event in GA4 UI or via API.
+
+---
+
+#### Test 4: List Conversion Events ✅
+
+**Command:**
+```
+List all conversion events for GA4 property 123456789
+```
+
+**Expected Behavior:**
+- Returns list of all conversion events
+- Includes both custom and default events
+- Shows event names and metadata
+
+**Success Criteria:**
+- ✅ Response received
+- ✅ Count matches GA4 console
+- ✅ Includes recently created test event
+
+---
+
+#### Test 5: Error Handling - Invalid Property ID ❌
+
+**Command:**
+```
+List custom dimensions for GA4 property 999999999
+```
+
+**Expected Behavior:**
+- Returns error message
+- Error is user-friendly
+- Doesn't crash the server
+
+**Success Criteria:**
+- ✅ Error response received
+- ✅ Error message indicates "Property not found" or similar
+- ✅ Server continues to respond to subsequent requests
+
+---
+
+#### Test 6: Error Handling - Duplicate Dimension ❌
+
+**Command:**
+```
+Create a custom dimension with parameter name "test_dimension" again in property 123456789
+```
+
+**Expected Behavior:**
+- Returns error about duplicate
+- Suggests checking existing dimensions
+- Doesn't crash
+
+**Success Criteria:**
+- ✅ Error response received
+- ✅ Error indicates dimension already exists
+- ✅ Server remains responsive
+
+---
+
+#### Test 7: Natural Language Interaction 🤖
+
+**Command:**
+```
+I need to set up GA4 tracking for my onboarding flow.
+Can you create custom dimensions for:
+1. signup_method (for tracking email vs Google signup)
+2. user_tier (for tracking free vs paid users)
+
+Use property ID 123456789
+```
+
+**Expected Behavior:**
+- Claude understands the request
+- Creates both dimensions with appropriate parameter names
+- Uses EVENT scope by default
+- Provides summary of what was created
+
+**Success Criteria:**
+- ✅ Both dimensions created
+- ✅ Parameter names follow GA4 conventions
+- ✅ Natural language processing works correctly
+- ✅ Summary is clear and helpful
+
+---
+
+#### Test 8: Batch Operations 📦
+
+**Command:**
+```
+For GA4 property 123456789, please:
+1. List all current custom dimensions
+2. Create a new dimension called "test_step" for tracking funnel steps
+3. Mark events "signup_complete" and "onboarding_complete" as conversions
+4. List all conversion events to confirm
+```
+
+**Expected Behavior:**
+- Executes all 4 operations in sequence
+- Provides clear output for each step
+- Handles any errors gracefully
+- Confirms final state
+
+**Success Criteria:**
+- ✅ All operations complete
+- ✅ Clear progress indication
+- ✅ Final state matches expectations
+- ✅ No operations lost or duplicated
+
+### Troubleshooting
+
+#### Issue: MCP server not found
+
+**Symptoms**: Claude Code doesn't see the ga4-admin server
+
+**Solutions**:
+1. Check settings.json syntax is valid JSON
+2. Verify path to dist/index.js is correct (absolute path)
+3. Ensure dist/index.js exists (`npm run build`)
+4. Restart Claude Code completely
+5. Check Claude Code logs for errors
+
+#### Issue: Permission denied errors
+
+**Symptoms**: API calls fail with 403 errors
+
+**Solutions**:
+1. Verify GOOGLE_APPLICATION_CREDENTIALS path is correct
+2. Check service account JSON key exists
+3. Confirm service account has Editor role in GA4 property
+4. Test credentials with gcloud:
+   ```bash
+   export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
+   gcloud auth application-default print-access-token
+   ```
+
+#### Issue: Property not found
+
+**Symptoms**: 404 errors when accessing property
+
+**Solutions**:
+1. Verify property ID is correct (numeric ID, not G-XXXXXXXXX)
+2. Check property ID in GA4 Admin → Property Settings
+3. Confirm service account has access to this specific property
+4. Try with a different property to isolate the issue
+
+#### Issue: Server crashes or hangs
+
+**Symptoms**: MCP server stops responding
+
+**Solutions**:
+1. Check for syntax errors in recent code changes
+2. View server logs (if available)
+3. Restart Claude Code
+4. Test server standalone:
+   ```bash
+   node dist/index.js
+   ```
+5. Check for resource limits (memory, file handles)
 
 ### E2E Test Checklist
 
@@ -355,6 +652,18 @@ Before each release:
 - [ ] Error messages are user-friendly
 - [ ] Natural language requests work correctly
 - [ ] Batch operations execute in order
+
+### Success Metrics
+
+After completing manual testing, verify:
+
+- [ ] All 4 tools work correctly
+- [ ] Error handling is appropriate
+- [ ] Natural language interaction works
+- [ ] Batch operations succeed
+- [ ] Performance is acceptable (<5s per operation)
+- [ ] Server remains stable across multiple requests
+- [ ] User experience is intuitive
 
 ---
 
@@ -654,6 +963,146 @@ node --inspect-brk node_modules/.bin/jest --runInBand tests/unit/tools.test.ts
 - ❌ Use real credentials in unit tests
 
 ---
+
+## Test Execution History
+
+### Initial Test Run (2025-10-08)
+
+**Test Suite Execution Results**:
+
+#### 1. Installation ✅
+
+```bash
+npm install
+```
+
+**Result**:
+- Installed 433 packages
+- No vulnerabilities found
+- Installation time: ~15 seconds
+
+#### 2. Unit Tests ✅
+
+```bash
+npm test
+```
+
+**Result**:
+```
+PASS tests/unit/tools.test.ts (5.234s)
+  MCP Tools
+    create_custom_dimension
+      ✓ should create a custom dimension successfully (12 ms)
+      ✓ should handle property ID as string or number (3 ms)
+      ✓ should handle property ID with G- prefix (3 ms)
+      ✓ should handle API errors gracefully (4 ms)
+    create_conversion_event
+      ✓ should mark an event as conversion successfully (2 ms)
+      ✓ should handle event name correctly (3 ms)
+      ✓ should handle API errors gracefully (3 ms)
+    list_custom_dimensions
+      ✓ should list all custom dimensions (4 ms)
+      ✓ should handle pagination (3 ms)
+      ✓ should handle empty results (3 ms)
+      ✓ should handle API errors gracefully (2 ms)
+    list_conversion_events
+      ✓ should list all conversion events (3 ms)
+      ✓ should handle pagination (3 ms)
+      ✓ should handle empty results (2 ms)
+      ✓ should handle API errors gracefully (2 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       15 passed, 15 total
+Snapshots:   0 total
+Time:        5.234 s
+```
+
+**Status**: ✅ All 15 tests passing
+
+#### 3. Code Coverage ⚠️
+
+```bash
+npm run test:coverage
+```
+
+**Result**:
+```
+--------------------------|---------|----------|---------|---------|
+File                      | % Stmts | % Branch | % Funcs | % Lines |
+--------------------------|---------|----------|---------|---------|
+All files                 |       0 |        0 |       0 |       0 |
+ src                      |       0 |        0 |       0 |       0 |
+  index.ts                |       0 |        0 |       0 |       0 |
+--------------------------|---------|----------|---------|---------|
+```
+
+**Status**: ⚠️ 0% coverage (known issue)
+
+**Reason**: Tests mock googleapis but don't execute src/index.ts code. Tests validate mock behavior but don't test actual MCP server handlers.
+
+#### 4. Build ✅
+
+```bash
+npm run build
+```
+
+**Result**:
+- Build successful
+- TypeScript compilation completed
+- Output: dist/index.js (generated)
+- Build time: ~2 seconds
+
+#### 5. Server Startup ✅
+
+```bash
+node dist/index.js
+```
+
+**Result**:
+```
+GA4 Admin MCP Server running on stdio
+```
+
+**Status**: ✅ Server starts successfully
+
+### Known Issues (v0.1.0)
+
+**1. Code Coverage: 0%**
+- **Issue**: Tests mock googleapis but don't test MCP server request handlers
+- **Impact**: No confidence in src/index.ts execution paths
+- **Effort**: 2-3 days to refactor
+- **Plan**: Refactor tests to instantiate server and test handlers via MCP protocol
+
+**2. Integration Tests Not Run**
+- **Issue**: Require GOOGLE_APPLICATION_CREDENTIALS and test GA4 property
+- **Impact**: API contracts not validated
+- **Status**: Tests written but skipped (11 tests)
+- **Next**: Set up test credentials and property
+
+**3. Manual E2E Testing Pending**
+- **Issue**: Need to validate full Claude Code integration
+- **Status**: Test guide created (8 scenarios)
+- **Next**: Run manual tests with real Claude Code instance
+
+### Recommendations
+
+**Immediate (High Priority)**:
+1. Set up test GA4 property and credentials
+2. Run integration tests to validate API contracts
+3. Perform manual E2E testing with Claude Code
+4. Document any issues found
+
+**Short-term (Medium Priority)**:
+1. Refactor unit tests to test actual MCP handlers (improve coverage)
+2. Add edge case tests (invalid inputs, error conditions)
+3. Test all error handling paths
+4. Target 50%+ coverage as first milestone
+
+**Long-term (Low Priority)**:
+1. Add performance benchmarks
+2. Test with multiple GA4 properties
+3. Stress test with batch operations
+4. Measure and optimize response times
 
 ## Test Metrics
 

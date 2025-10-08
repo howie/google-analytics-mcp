@@ -95,25 +95,34 @@ google-analytics-mcp/
 │   │   └── test-data.ts      # Test data fixtures
 │   └── setup.ts              # Jest setup configuration
 ├── docs/
-│   └── features/             # Feature planning and documentation
-│       ├── README.md         # Complete feature specification
-│       ├── IMPLEMENTATION.md # Development status (85% complete)
-│       ├── GA4_SETUP_GUIDE.md
-│       ├── GA4_QUICK_START.md
-│       ├── GA4_API_SETUP.md
-│       ├── LEARNINGS_FROM_OFFICIAL.md
-│       ├── QUICK_START.md
-│       └── TECHNICAL.md
+│   ├── claude/               # Claude Code specific documentation
+│   │   ├── quick-reference.md       # Commands, config, workflows
+│   │   ├── development-standards.md # TDD, code quality, commits
+│   │   ├── architecture.md          # System design, components
+│   │   ├── testing.md               # Testing strategy, test writing
+│   │   └── context/
+│   │       ├── project-overview.md  # High-level project context
+│   │       └── active-work.md       # Current tasks, decisions
+│   ├── features/             # Feature planning and documentation
+│   │   ├── README.md         # Complete feature specification
+│   │   ├── IMPLEMENTATION.md # Development status (85% complete)
+│   │   ├── GA4_SETUP_GUIDE.md
+│   │   ├── GA4_QUICK_START.md
+│   │   ├── GA4_API_SETUP.md
+│   │   ├── LEARNINGS_FROM_OFFICIAL.md
+│   │   ├── QUICK_START.md
+│   │   └── TECHNICAL.md
+│   └── open-source/          # Open source preparation
+│       └── publishing-checklist.md  # Release preparation
 ├── dist/                     # Compiled JavaScript output
 │   ├── index.js              # Main executable (10KB)
 │   ├── index.js.map          # Source map
 │   ├── index.d.ts            # Type definitions
 │   └── index.d.ts.map
-├── CLAUDE.md                 # This file
+├── CLAUDE.md                 # This file (navigation hub)
 ├── README.md                 # User-facing documentation
-├── QUICK_START.md            # Quick setup guide
-├── TEST_RESULTS.md           # Comprehensive test report
-├── CLAUDE_CODE_INTEGRATION.md # Manual testing guide
+├── CONTRIBUTING.md           # Open source contribution guidelines
+├── CHANGELOG.md              # Version history
 ├── package.json              # Dependencies and scripts
 ├── tsconfig.json             # TypeScript configuration
 └── jest.config.js            # Jest testing configuration
@@ -272,7 +281,7 @@ For GA4 property 123456789:
 4. List all conversion events to confirm
 ```
 
-📚 **Complete Integration Guide**: See `CLAUDE_CODE_INTEGRATION.md`
+📚 **Complete Integration Guide**: See `docs/claude/testing.md` (E2E Testing section)
 
 ## Known Issues & Technical Debt
 
@@ -283,7 +292,7 @@ For GA4 property 123456789:
    - **Cause**: Tests mock googleapis API but don't instantiate MCP server
    - **Impact**: No verification that MCP request handlers work correctly
    - **Fix**: Refactor tests to test actual server.setRequestHandler implementations
-   - **Tracked in**: TEST_RESULTS.md
+   - **Tracked in**: docs/claude/testing.md (Test Execution History)
 
 2. **Input Validation Not Enforced**
    - **Issue**: Validation logic exists in tests but not in server code
@@ -316,13 +325,30 @@ For GA4 property 123456789:
 
 📚 **Complete Technical Debt**: See `docs/features/IMPLEMENTATION.md`
 
-## Key References
+## 📚 Documentation Structure
 
-### Essential Documentation
-- **Test Results**: `TEST_RESULTS.md` - Comprehensive test report (v0.1.0)
-- **Integration Guide**: `CLAUDE_CODE_INTEGRATION.md` - Manual testing procedures
-- **Quick Start**: `QUICK_START.md` - 30-second setup guide
-- **Implementation Status**: `@docs/features/IMPLEMENTATION.md` - 85% complete, v0.1.0
+This project uses a two-tier documentation system:
+
+### Tier 1: CLAUDE.md (this file)
+- Navigation hub and quick reference
+- Links to comprehensive docs
+- Commands-first approach
+
+### Tier 2: docs/claude/
+- **quick-reference.md** - Commands, config, workflows (500+ lines)
+- **development-standards.md** - TDD, code quality, commits (700+ lines)
+- **architecture.md** - System design, components, data flow (660+ lines)
+- **testing.md** - Testing strategy, test writing, debugging (1100+ lines)
+- **context/project-overview.md** - High-level project context (380+ lines)
+- **context/active-work.md** - Current tasks, decisions, metrics (390+ lines)
+
+### Root Documentation
+- **README.md** - User-facing project overview
+- **CONTRIBUTING.md** - Open source contribution guidelines
+- **CHANGELOG.md** - Version history
+
+### docs/open-source/
+- **publishing-checklist.md** - Open source release preparation
 
 ### Feature Documentation
 - **Feature Planning**: `@docs/features/README.md` - Complete specification
@@ -330,6 +356,7 @@ For GA4 property 123456789:
 - **API Automation**: `@docs/features/GA4_API_SETUP.md` - Python automation alternative
 - **Technical Details**: `@docs/features/TECHNICAL.md` - MCP server architecture
 - **Research Notes**: `@docs/features/LEARNINGS_FROM_OFFICIAL.md` - Lessons from official GA MCP
+- **Implementation Status**: `@docs/features/IMPLEMENTATION.md` - 85% complete, v0.1.0
 
 ### External Resources
 - **MCP Protocol**: https://modelcontextprotocol.io/docs
@@ -383,7 +410,7 @@ Always mark todos as completed immediately after finishing tasks.
 
 ### Immediate (Current Sprint)
 1. ⏳ **Manual Claude Code Integration Testing**
-   - See `CLAUDE_CODE_INTEGRATION.md` for test scenarios
+   - See `docs/claude/testing.md` (E2E Testing section) for 8 test scenarios
    - Verify all 4 tools work with real GA4 property
    - Document any issues found
 
