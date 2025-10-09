@@ -1,44 +1,47 @@
 # Google Analytics 4 Admin MCP Server
 
-> 🤖 Automate Google Analytics 4 configuration with Claude Code in 30 seconds
+> 🤖 Automate Google Analytics 4 configuration with Claude Code in just 30 seconds
 
+[![CI](https://github.com/howie/google-analytics-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/howie/google-analytics-mcp/actions/workflows/ci.yml)
+[![Release](https://github.com/howie/google-analytics-mcp/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/howie/google-analytics-mcp/actions/workflows/npm-publish.yml)
+[![npm version](https://img.shields.io/npm/v/%40coachly%2Fga4-admin-mcp.svg)](https://www.npmjs.com/package/@coachly/ga4-admin-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
-[![MCP](https://img.shields.io/badge/MCP-0.5.0-green.svg)](https://modelcontextprotocol.io/)
+[![GitHub stars](https://img.shields.io/github/stars/howie/google-analytics-mcp.svg?style=social&label=Stars)](https://github.com/howie/google-analytics-mcp/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/howie/google-analytics-mcp.svg?style=social&label=Forks)](https://github.com/howie/google-analytics-mcp/network/members)
 
-**An MCP (Model Context Protocol) server that enables Claude Code to perform Google Analytics 4 Admin API operations through natural language.**
+➡️ [繁體中文 README](./README.zh-TW.md)
 
-## Why This Project?
+**An MCP (Model Context Protocol) server that lets Claude Code execute Google Analytics 4 Admin API tasks via natural language.**
 
-The official Google Analytics MCP (`googleanalytics/google-analytics-mcp`) only provides **read-only** functionality.
+## Why build a custom GA4 MCP server?
 
-This custom MCP server provides **write operations** for GA4 Admin API:
+The official Google Analytics MCP (`googleanalytics/google-analytics-mcp`) currently exposes **read-only** operations. This project focuses on **write** features that marketing and analytics teams need every day:
 
 - ✅ Create custom dimensions
-- ✅ Mark conversion events
-- ✅ List and manage GA4 configuration
-- 🔄 Create audiences (coming soon)
-- 🔄 Manage property settings (coming soon)
+- ✅ Mark events as conversions
+- ✅ Inspect and manage GA4 configuration
+- 🔄 Create audiences *(coming soon)*
+- 🔄 Update property settings *(coming soon)*
 
-**Time Comparison:**
+**Time comparison**
 
-- Manual setup: 15 minutes
-- Python script: 2 minutes
-- **This MCP Server: 30 seconds** ⚡
+- Manual configuration: 15 minutes
+- Python scripting: 2 minutes
+- **This MCP server**: 30 seconds ⚡
 
-## 📚 Complete Setup Guide
+## 📚 Complete setup guide
 
-**👉 [Complete Setup Tutorial](./docs/tutorial/SETUP_TUTORIAL.md) - Step-by-step guide**
+**👉 [Step-by-step tutorial](./docs/tutorial/SETUP_TUTORIAL.md)**
 
-The tutorial covers:
-- ✅ Creating a Google Cloud service account
-- ✅ Enabling the Analytics Admin API
-- ✅ Granting GA4 property access
-- ✅ Installing and configuring the MCP server
-- ✅ Testing your setup
-- ✅ Usage examples and best practices
+The guide covers:
+- Creating a Google Cloud service account
+- Enabling the Analytics Admin API
+- Granting GA4 property access
+- Installing and configuring the MCP server
+- Validating your setup
+- Usage examples and best practices
 
-## Quick Start
+## Quick start
 
 ### Installation
 
@@ -51,11 +54,9 @@ npm run build
 
 ### Configuration
 
-1. Create a service account and download JSON key ([detailed guide](./docs/tutorial/SETUP_TUTORIAL.md#step-1-create-google-cloud-service-account))
-2. Grant the service account Editor role in GA4 ([detailed guide](./docs/tutorial/SETUP_TUTORIAL.md#step-2-grant-ga4-property-access))
-3. Configure Claude Code:
-
-Add to `~/.claude/settings.json`:
+1. Create a service account and download the JSON key ([details](./docs/tutorial/SETUP_TUTORIAL.md#step-1-create-google-cloud-service-account))
+2. Grant the service account **Editor** access in your GA4 property ([details](./docs/tutorial/SETUP_TUTORIAL.md#step-2-grant-ga4-property-access))
+3. Point Claude Code to the compiled MCP server by adding the following to `~/.claude/settings.json`:
 
 ```json
 {
@@ -71,41 +72,31 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-4. Restart Claude Code
+4. Restart Claude Code to load the server.
 
-### Usage in Claude Code
+### Using the tools in Claude Code
 
-在 `~/.claude/settings.json` 加入:
+Once the server is active, describe what you want to change in GA4. Claude will call the right MCP tool automatically. For example:
 
-```json
-{
-  "mcpServers": {
-    "ga4-admin": {
-      "command": "node",
-      "args": ["/path/to/coaching_transcript_tool/mcp-servers/ga4-admin/dist/index.js"],
-      "env": {
-        "GOOGLE_APPLICATION_CREDENTIALS": "/path/to/service-account-key.json"
-      }
-    }
-  }
-}
+```text
+Create a conversion event named "user_signup_complete" in GA4 property G-859X61KC45.
 ```
 
-## 可用工具
+## Available tools
 
-### 1. create_custom_dimension
+### 1. `create_custom_dimension`
 
 ```typescript
 {
   propertyId: "G-859X61KC45",
   parameterName: "method",
-  displayName: "登入方式",
-  description: "使用者的登入/註冊方式",
+  displayName: "Sign-in Method",
+  description: "Describes how the user signed in or registered",
   scope: "EVENT"
 }
 ```
 
-### 2. create_conversion_event
+### 2. `create_conversion_event`
 
 ```typescript
 {
@@ -114,7 +105,7 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-### 3. list_custom_dimensions
+### 3. `list_custom_dimensions`
 
 ```typescript
 {
@@ -122,7 +113,7 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-### 4. list_conversion_events
+### 4. `list_conversion_events`
 
 ```typescript
 {
@@ -130,37 +121,35 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-## 範例使用
-
-在 Claude Code 中:
+## Example prompt
 
 ```text
-幫我在 GA4 (G-859X61KC45) 建立以下自訂維度：
-1. method - 登入方式
-2. session_id - Session ID
-3. error_type - 錯誤類型
-4. step - 快速開始步驟
+In GA4 property G-859X61KC45 create these custom dimensions:
+1. method - sign-in method
+2. session_id - session identifier
+3. error_type - reported error type
+4. step - onboarding step
 ```
 
-Claude 會自動使用 MCP 工具完成設定。
+Claude will orchestrate the necessary MCP calls to complete the setup.
 
-## 與其他方案比較
+## How does it compare?
 
-| 方案 | 前置時間 | 執行時間 | 總時間 | 可重複 | 整合度 |
-|-----|---------|---------|--------|--------|--------|
-| 手動設定 | 0 | 15 分鐘 | **15 分鐘** | ❌ 低 | - |
-| Python 腳本 | 5 分鐘 | 2 分鐘 | **7 分鐘** | ✅ 高 | ⭐⭐ |
-| **MCP Server** | 6 分鐘 | **30 秒** | **6.5 分鐘** | ✅✅ 極高 | ⭐⭐⭐⭐⭐ |
+| Approach          | Prep time | Execution time | Total time | Repeatable | Integration |
+|-------------------|-----------|----------------|------------|------------|-------------|
+| Manual setup      | 0         | 15 min         | **15 min** | ❌ Low     | –           |
+| Python script     | 5 min     | 2 min          | **7 min**  | ✅ High    | ⭐⭐         |
+| **MCP server**    | 6 min     | **30 sec**     | **6.5 min**| ✅✅ Very high | ⭐⭐⭐⭐⭐  |
 
-**MCP Server 優勢**:
+**Why the MCP approach wins**
 
-- ⚡ 執行最快（30 秒）
-- 🔄 完全可重複
-- 🤖 自然語言操作
-- 📝 與 Claude Code 完美整合
-- 🔧 可擴展（未來可加更多功能）
+- ⚡ Fastest turnaround (seconds instead of minutes)
+- 🔄 Fully repeatable for different properties
+- 🤖 Natural-language friendly
+- 📝 Seamless Claude Code integration
+- 🔧 Designed for future expansion
 
-## 技術架構
+## Architecture
 
 ```text
 Claude Code
@@ -170,30 +159,35 @@ GA4 Admin MCP Server
 Google Analytics 4
 ```
 
-## 待實作功能
+## Roadmap
 
-- [ ] Create custom dimensions ✅
-- [ ] Mark conversion events ✅
-- [ ] List custom dimensions ✅
-- [ ] List conversion events ✅
+- [x] Create custom dimensions
+- [x] Create conversion events
+- [x] List custom dimensions
+- [x] List conversion events
 - [ ] Create audiences
 - [ ] Update property settings
 - [ ] Delete custom dimensions
 - [ ] Batch operations
 
-## 開發
+## Development
 
 ```bash
-# 開發模式
-npm run dev
+# Type-check and build
+npm run build
 
-# 測試
+# Run tests
 npm test
 
-# Build
-npm run build
+# Developer mode (watch build)
+npm run dev
 ```
 
-## 授權
+## CI/CD
+
+- Pushing to `main` or opening a pull request triggers the [CI workflow](./.github/workflows/ci.yml) to lint, type-check, build, and run tests.
+- Releasing a new version is as simple as pushing a `v*` tag (or triggering the workflow manually). The [Release workflow](./.github/workflows/npm-publish.yml) rebuilds the package and publishes to npm. Make sure an `NPM_TOKEN` secret with publish rights is configured.
+
+## License
 
 MIT

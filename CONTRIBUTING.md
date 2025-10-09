@@ -138,6 +138,7 @@ git commit -m "docs(readme): update installation instructions"
 
 - ✅ Code builds without errors
 - ✅ All tests pass
+- ✅ GitHub Actions CI (lint, typecheck, build, test) passes
 - ✅ Code follows style guidelines
 - ✅ Documentation is updated
 - ✅ Commit messages follow conventions
