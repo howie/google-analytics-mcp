@@ -2,30 +2,20 @@
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
+import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { google } from "googleapis";
 
+import {
+  createConversionEvent,
+  createCustomDimension,
+  listConversionEvents,
+  listCustomDimensions,
+  type CreateConversionEventArgs,
+  type CreateCustomDimensionArgs,
+  type ListResourceArgs,
+} from "./tools.js";
+
 const analyticsadmin = google.analyticsadmin("v1beta");
-
-interface CreateCustomDimensionArgs {
-  propertyId: string;
-  parameterName: string;
-  displayName: string;
-  description?: string;
-  scope?: "EVENT" | "USER" | "ITEM";
-}
-
-interface CreateConversionEventArgs {
-  propertyId: string;
-  eventName: string;
-}
-
-interface ListResourceArgs {
-  propertyId: string;
-}
 
 // Initialize auth client
 async function getAuthClient() {
@@ -36,45 +26,6 @@ async function getAuthClient() {
     ],
   });
   return await auth.getClient();
-}
-
-// Convert measurement ID (G-XXXXXXXXX) to property ID
-async function resolvePropertyId(propertyId: string): Promise<string> {
-  // If already in properties/XXX format, return as-is
-  if (propertyId.startsWith("properties/")) {
-    return propertyId;
-  }
-
-  // If it's a measurement ID (G-XXXXXXXXX), look it up
-  if (propertyId.startsWith("G-")) {
-    const accounts = await analyticsadmin.accountSummaries.list();
-    const accountSummaries = accounts.data.accountSummaries || [];
-
-    for (const accountSummary of accountSummaries) {
-      const propertySummaries = accountSummary.propertySummaries || [];
-
-      for (const propertySummary of propertySummaries) {
-        const propertyName = propertySummary.property || "";
-
-        // Check data streams for this property
-        const streams = await analyticsadmin.properties.dataStreams.list({
-          parent: propertyName,
-        });
-
-        const dataStreams = streams.data.dataStreams || [];
-        for (const stream of dataStreams) {
-          if (stream.webStreamData?.measurementId === propertyId) {
-            return propertyName;
-          }
-        }
-      }
-    }
-
-    throw new Error(`No property found with measurement ID: ${propertyId}`);
-  }
-
-  // Otherwise, assume it's a numeric property ID
-  return `properties/${propertyId}`;
 }
 
 // Create MCP server
@@ -187,26 +138,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     switch (name) {
       case "create_custom_dimension": {
-        const {
-          propertyId,
-          parameterName,
-          displayName,
-          description = "",
-          scope = "EVENT",
-        } = args as unknown as CreateCustomDimensionArgs;
-
-        const propertyPath = await resolvePropertyId(propertyId);
-
-        const response =
-          await analyticsadmin.properties.customDimensions.create({
-            parent: propertyPath,
-            requestBody: {
-              parameterName,
-              displayName,
-              description,
-              scope,
-            },
-          });
+        const dimension = await createCustomDimension(
+          analyticsadmin,
+          args as unknown as CreateCustomDimensionArgs,
+        );
 
         return {
           content: [
@@ -215,8 +150,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: JSON.stringify(
                 {
                   success: true,
-                  message: `✅ Created custom dimension: ${displayName}`,
-                  dimension: response.data,
+                  message: `✅ Created custom dimension: ${dimension.displayName}`,
+                  dimension,
                 },
                 null,
                 2,
@@ -227,18 +162,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "create_conversion_event": {
-        const { propertyId, eventName } =
-          args as unknown as CreateConversionEventArgs;
-
-        const propertyPath = await resolvePropertyId(propertyId);
-
-        const response =
-          await analyticsadmin.properties.conversionEvents.create({
-            parent: propertyPath,
-            requestBody: {
-              eventName,
-            },
-          });
+        const event = await createConversionEvent(
+          analyticsadmin,
+          args as unknown as CreateConversionEventArgs,
+        );
 
         return {
           content: [
@@ -247,8 +174,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: JSON.stringify(
                 {
                   success: true,
-                  message: `✅ Marked as conversion: ${eventName}`,
-                  event: response.data,
+                  message: `✅ Marked as conversion: ${event.eventName}`,
+                  event,
                 },
                 null,
                 2,
@@ -259,15 +186,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "list_custom_dimensions": {
-        const { propertyId } = args as unknown as ListResourceArgs;
-
-        const propertyPath = await resolvePropertyId(propertyId);
-
-        const response = await analyticsadmin.properties.customDimensions.list({
-          parent: propertyPath,
-        });
-
-        const dimensions = response.data.customDimensions || [];
+        const result = await listCustomDimensions(
+          analyticsadmin,
+          args as unknown as ListResourceArgs,
+        );
 
         return {
           content: [
@@ -276,14 +198,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: JSON.stringify(
                 {
                   success: true,
-                  count: dimensions.length,
-                  dimensions: dimensions.map((d) => ({
-                    name: d.name,
-                    displayName: d.displayName,
-                    parameterName: d.parameterName,
-                    scope: d.scope,
-                    description: d.description,
-                  })),
+                  count: result.dimensions.length,
+                  dimensions: result.dimensions,
                 },
                 null,
                 2,
@@ -294,15 +210,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "list_conversion_events": {
-        const { propertyId } = args as unknown as ListResourceArgs;
-
-        const propertyPath = await resolvePropertyId(propertyId);
-
-        const response = await analyticsadmin.properties.conversionEvents.list({
-          parent: propertyPath,
-        });
-
-        const events = response.data.conversionEvents || [];
+        const result = await listConversionEvents(
+          analyticsadmin,
+          args as unknown as ListResourceArgs,
+        );
 
         return {
           content: [
@@ -311,13 +222,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: JSON.stringify(
                 {
                   success: true,
-                  count: events.length,
-                  events: events.map((e) => ({
-                    name: e.name,
-                    eventName: e.eventName,
-                    createTime: e.createTime,
-                    deletable: e.deletable,
-                  })),
+                  count: result.events.length,
+                  events: result.events,
                 },
                 null,
                 2,

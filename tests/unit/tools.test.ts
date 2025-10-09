@@ -1,354 +1,380 @@
-/**
- * Unit Tests for MCP Tools
- *
- * Tests the individual tool implementations without making real API calls.
- */
+import {
+  createConversionEvent,
+  createCustomDimension,
+  listConversionEvents,
+  listCustomDimensions,
+  resolvePropertyId,
+  type AnalyticsAdminClient,
+  type CreateConversionEventArgs,
+  type CreateCustomDimensionArgs,
+  type ListResourceArgs,
+} from "../../src/tools";
 
-import { mockAnalyticsAdminClient, resetAllMocks } from '../mocks/googleapis';
+interface FakeOptions {
+  customDimensionData?: any;
+  customDimensionsListData?: any[];
+  conversionEventData?: any;
+  conversionEventsListData?: any[];
+  dataStreamsByProperty?: Record<string, any[]>;
+  accountSummaries?: Array<{
+    propertySummaries?: Array<{
+      property?: string;
+    }>;
+  }>;
+}
 
-// Mock googleapis before importing the server
-jest.mock('googleapis', () => ({
-  google: {
-    analyticsadmin: jest.fn(() => mockAnalyticsAdminClient),
-    auth: {
-      GoogleAuth: jest.fn().mockImplementation(() => ({
-        getClient: jest.fn().mockResolvedValue({}),
-      })),
+class FakeAnalyticsAdmin {
+  public customDimensionsCreateCalls: any[] = [];
+  public customDimensionsListCalls: any[] = [];
+  public conversionEventsCreateCalls: any[] = [];
+  public conversionEventsListCalls: any[] = [];
+  public dataStreamsListCalls: any[] = [];
+  public accountSummariesCalls = 0;
+
+  public customDimensionData: any;
+  public customDimensionsListData: any[];
+  public conversionEventData: any;
+  public conversionEventsListData: any[];
+  public dataStreamsByProperty: Record<string, any[]>;
+  public accountSummariesData: Array<{
+    propertySummaries?: Array<{
+      property?: string;
+    }>;
+  }>;
+
+  private nextCustomDimensionError?: unknown;
+  private nextConversionEventError?: unknown;
+
+  constructor(options: FakeOptions = {}) {
+    this.customDimensionData =
+      options.customDimensionData ?? {
+        name: "properties/123456/customDimensions/1",
+        parameterName: "test_param",
+        displayName: "Test Dimension",
+        description: "A test custom dimension",
+        scope: "EVENT",
+        disallowAdsPersonalization: false,
+      };
+
+    this.customDimensionsListData =
+      options.customDimensionsListData ?? [this.customDimensionData];
+
+    this.conversionEventData =
+      options.conversionEventData ?? {
+        name: "properties/123456/conversionEvents/1",
+        eventName: "test_conversion",
+        createTime: "2025-10-07T00:00:00Z",
+        deletable: true,
+        custom: true,
+      };
+
+    this.conversionEventsListData =
+      options.conversionEventsListData ?? [this.conversionEventData];
+
+    this.dataStreamsByProperty =
+      options.dataStreamsByProperty ?? Object.create(null);
+
+    this.accountSummariesData = options.accountSummaries ?? [];
+  }
+
+  public setNextCustomDimensionError(error: unknown) {
+    this.nextCustomDimensionError = error;
+  }
+
+  public setNextConversionEventError(error: unknown) {
+    this.nextConversionEventError = error;
+  }
+
+  public readonly properties = {
+    customDimensions: {
+      create: async (request: any) => {
+        this.customDimensionsCreateCalls.push(request);
+        if (this.nextCustomDimensionError) {
+          const error = this.nextCustomDimensionError;
+          this.nextCustomDimensionError = undefined;
+          throw error;
+        }
+        return { data: this.customDimensionData };
+      },
+      list: async (request: any) => {
+        this.customDimensionsListCalls.push(request);
+        return {
+          data: {
+            customDimensions: this.customDimensionsListData.map((dimension) => ({
+              ...dimension,
+            })),
+            nextPageToken: null,
+          },
+        };
+      },
     },
-  },
-}));
-
-describe('MCP Tools', () => {
-  beforeEach(() => {
-    resetAllMocks();
-  });
-
-  describe('create_custom_dimension', () => {
-    it('should create a custom dimension successfully', async () => {
-      const mockCreate =
-        mockAnalyticsAdminClient.properties.customDimensions.create;
-
-      // Simulate tool call
-      const args = {
-        propertyId: '123456',
-        parameterName: 'test_param',
-        displayName: 'Test Dimension',
-        description: 'A test custom dimension',
-        scope: 'EVENT',
-      };
-
-      // Call the mocked API
-      const result = await mockCreate({
-        parent: `properties/${args.propertyId}`,
-        requestBody: {
-          parameterName: args.parameterName,
-          displayName: args.displayName,
-          description: args.description,
-          scope: args.scope,
-        },
-      });
-
-      // Assertions
-      expect(mockCreate).toHaveBeenCalledTimes(1);
-      expect(mockCreate).toHaveBeenCalledWith({
-        parent: 'properties/123456',
-        requestBody: {
-          parameterName: 'test_param',
-          displayName: 'Test Dimension',
-          description: 'A test custom dimension',
-          scope: 'EVENT',
-        },
-      });
-      expect(result.data).toHaveProperty('parameterName', 'test_param');
-      expect(result.data).toHaveProperty('displayName', 'Test Dimension');
-    });
-
-    it('should handle property ID as string or number', async () => {
-      const mockCreate =
-        mockAnalyticsAdminClient.properties.customDimensions.create;
-
-      // Test with string
-      await mockCreate({
-        parent: 'properties/123456',
-        requestBody: {},
-      });
-
-      expect(mockCreate).toHaveBeenCalledWith({
-        parent: 'properties/123456',
-        requestBody: {},
-      });
-
-      resetAllMocks();
-
-      // Test with number (should be converted to string in actual implementation)
-      await mockCreate({
-        parent: `properties/${123456}`,
-        requestBody: {},
-      });
-
-      expect(mockCreate).toHaveBeenCalledWith({
-        parent: 'properties/123456',
-        requestBody: {},
-      });
-    });
-
-    it('should handle API errors gracefully', async () => {
-      const mockCreate =
-        mockAnalyticsAdminClient.properties.customDimensions.create;
-
-      // Mock an error response
-      mockCreate.mockRejectedValueOnce({
-        code: 409,
-        message: 'Dimension already exists',
-      });
-
-      await expect(
-        mockCreate({
-          parent: 'properties/123456',
-          requestBody: {
-            parameterName: 'duplicate_param',
+    conversionEvents: {
+      create: async (request: any) => {
+        this.conversionEventsCreateCalls.push(request);
+        if (this.nextConversionEventError) {
+          const error = this.nextConversionEventError;
+          this.nextConversionEventError = undefined;
+          throw error;
+        }
+        return { data: this.conversionEventData };
+      },
+      list: async (request: any) => {
+        this.conversionEventsListCalls.push(request);
+        return {
+          data: {
+            conversionEvents: this.conversionEventsListData.map((event) => ({
+              ...event,
+            })),
+            nextPageToken: null,
           },
-        })
-      ).rejects.toMatchObject({
-        code: 409,
-        message: 'Dimension already exists',
-      });
-    });
-  });
-
-  describe('create_conversion_event', () => {
-    it('should mark an event as conversion successfully', async () => {
-      const mockCreate =
-        mockAnalyticsAdminClient.properties.conversionEvents.create;
-
-      const args = {
-        propertyId: '123456',
-        eventName: 'test_conversion',
-      };
-
-      const result = await mockCreate({
-        parent: `properties/${args.propertyId}`,
-        requestBody: {
-          eventName: args.eventName,
-        },
-      });
-
-      expect(mockCreate).toHaveBeenCalledTimes(1);
-      expect(mockCreate).toHaveBeenCalledWith({
-        parent: 'properties/123456',
-        requestBody: {
-          eventName: 'test_conversion',
-        },
-      });
-      expect(result.data).toHaveProperty('eventName', 'test_conversion');
-      expect(result.data).toHaveProperty('custom', true);
-    });
-
-    it('should handle duplicate conversion event error', async () => {
-      const mockCreate =
-        mockAnalyticsAdminClient.properties.conversionEvents.create;
-
-      mockCreate.mockRejectedValueOnce({
-        code: 409,
-        message: 'Conversion event already exists',
-      });
-
-      await expect(
-        mockCreate({
-          parent: 'properties/123456',
-          requestBody: {
-            eventName: 'existing_event',
+        };
+      },
+    },
+    dataStreams: {
+      list: async (request: any) => {
+        this.dataStreamsListCalls.push(request);
+        const parent = request.parent;
+        const dataStreams = this.dataStreamsByProperty[parent] ?? [];
+        return {
+          data: {
+            dataStreams: dataStreams.map((stream) => ({ ...stream })),
           },
-        })
-      ).rejects.toMatchObject({
-        code: 409,
-        message: 'Conversion event already exists',
-      });
-    });
-  });
+        };
+      },
+    },
+  };
 
-  describe('list_custom_dimensions', () => {
-    it('should list all custom dimensions for a property', async () => {
-      const mockList =
-        mockAnalyticsAdminClient.properties.customDimensions.list;
-
-      const result = await mockList({
-        parent: 'properties/123456',
-      });
-
-      expect(mockList).toHaveBeenCalledTimes(1);
-      expect(mockList).toHaveBeenCalledWith({
-        parent: 'properties/123456',
-      });
-      expect(result.data.customDimensions).toHaveLength(1);
-      expect(result.data.customDimensions[0]).toHaveProperty(
-        'parameterName',
-        'test_param'
-      );
-    });
-
-    it('should handle empty list', async () => {
-      const mockList =
-        mockAnalyticsAdminClient.properties.customDimensions.list;
-
-      mockList.mockResolvedValueOnce({
+  public readonly accountSummaries = {
+    list: async () => {
+      this.accountSummariesCalls += 1;
+      return {
         data: {
-          customDimensions: [],
-          nextPageToken: null,
+          accountSummaries: this.accountSummariesData.map((summary) => ({
+            ...summary,
+            propertySummaries: summary.propertySummaries?.map((property) => ({
+              ...property,
+            })),
+          })),
         },
-      });
+      };
+    },
+  };
+}
 
-      const result = await mockList({
-        parent: 'properties/123456',
-      });
+const asClient = (fake: FakeAnalyticsAdmin): AnalyticsAdminClient =>
+  fake as unknown as AnalyticsAdminClient;
 
-      expect(result.data.customDimensions).toHaveLength(0);
-    });
+describe("resolvePropertyId", () => {
+  it("returns property path when already formatted", async () => {
+    const client = new FakeAnalyticsAdmin();
+
+    await expect(
+      resolvePropertyId(asClient(client), "properties/999999"),
+    ).resolves.toBe("properties/999999");
+    expect(client.accountSummariesCalls).toBe(0);
   });
 
-  describe('list_conversion_events', () => {
-    it('should list all conversion events for a property', async () => {
-      const mockList =
-        mockAnalyticsAdminClient.properties.conversionEvents.list;
+  it("prefixes numeric property ids", async () => {
+    const client = new FakeAnalyticsAdmin();
+    await expect(
+      resolvePropertyId(asClient(client), "123456"),
+    ).resolves.toBe("properties/123456");
+  });
 
-      const result = await mockList({
-        parent: 'properties/123456',
-      });
-
-      expect(mockList).toHaveBeenCalledTimes(1);
-      expect(mockList).toHaveBeenCalledWith({
-        parent: 'properties/123456',
-      });
-      expect(result.data.conversionEvents).toHaveLength(1);
-      expect(result.data.conversionEvents[0]).toHaveProperty(
-        'eventName',
-        'test_conversion'
-      );
-    });
-
-    it('should handle empty conversion events list', async () => {
-      const mockList =
-        mockAnalyticsAdminClient.properties.conversionEvents.list;
-
-      mockList.mockResolvedValueOnce({
-        data: {
-          conversionEvents: [],
-          nextPageToken: null,
+  it("resolves measurement ids via data streams", async () => {
+    const client = new FakeAnalyticsAdmin({
+      accountSummaries: [
+        {
+          propertySummaries: [
+            {
+              property: "properties/777777",
+            },
+          ],
         },
-      });
+      ],
+      dataStreamsByProperty: {
+        "properties/777777": [
+          {
+            webStreamData: {
+              measurementId: "G-TEST1234",
+            },
+          },
+        ],
+      },
+    });
 
-      const result = await mockList({
-        parent: 'properties/123456',
-      });
-
-      expect(result.data.conversionEvents).toHaveLength(0);
+    await expect(
+      resolvePropertyId(asClient(client), "G-TEST1234"),
+    ).resolves.toBe("properties/777777");
+    expect(client.accountSummariesCalls).toBe(1);
+    expect(client.dataStreamsListCalls[0]).toEqual({
+      parent: "properties/777777",
     });
   });
 
-  describe('Input Validation', () => {
-    it('should validate property ID format', () => {
-      // Test various property ID formats
-      const validIds = ['123456', 'G-123456', 'properties/123456'];
-      const invalidIds = ['', null, undefined];
-
-      validIds.forEach((id) => {
-        expect(typeof id === 'string' && id.length > 0).toBe(true);
-      });
-
-      invalidIds.forEach((id) => {
-        expect(!id || (typeof id === 'string' && id.length === 0)).toBe(true);
-      });
+  it("throws when measurement id is not found", async () => {
+    const client = new FakeAnalyticsAdmin({
+      accountSummaries: [
+        {
+          propertySummaries: [
+            {
+              property: "properties/100000",
+            },
+          ],
+        },
+      ],
+      dataStreamsByProperty: {
+        "properties/100000": [],
+      },
     });
 
-    it('should validate parameter name rules', () => {
-      // GA4 parameter name rules:
-      // - Must start with a letter
-      // - Can contain letters, numbers, underscores
-      // - Max 40 characters
-      const validNames = ['method', 'session_id', 'error_type', 'step_number'];
-      const invalidNames = ['1_invalid', 'invalid-dash', 'too_long_' + 'a'.repeat(40)];
+    await expect(
+      resolvePropertyId(asClient(client), "G-NOTFOUND"),
+    ).rejects.toThrow("No property found with measurement ID: G-NOTFOUND");
+  });
+});
 
-      const paramNameRegex = /^[a-zA-Z][a-zA-Z0-9_]{0,39}$/;
+describe("createCustomDimension", () => {
+  const baseArgs: CreateCustomDimensionArgs = {
+    propertyId: "123456",
+    parameterName: "test_param",
+    displayName: "Test Dimension",
+    description: "Unit test dimension",
+  };
 
-      validNames.forEach((name) => {
-        expect(paramNameRegex.test(name)).toBe(true);
-      });
+  it("creates a custom dimension with defaults", async () => {
+    const client = new FakeAnalyticsAdmin();
 
-      invalidNames.forEach((name) => {
-        expect(paramNameRegex.test(name)).toBe(false);
-      });
+    const result = await createCustomDimension(asClient(client), baseArgs);
+
+    expect(client.customDimensionsCreateCalls).toHaveLength(1);
+    expect(client.customDimensionsCreateCalls[0]).toEqual({
+      parent: "properties/123456",
+      requestBody: {
+        parameterName: "test_param",
+        displayName: "Test Dimension",
+        description: "Unit test dimension",
+        scope: "EVENT",
+      },
     });
-
-    it('should validate scope values', () => {
-      const validScopes = ['EVENT', 'USER', 'ITEM'];
-      const invalidScopes = ['INVALID', 'event', 'Session'];
-
-      validScopes.forEach((scope) => {
-        expect(['EVENT', 'USER', 'ITEM'].includes(scope)).toBe(true);
-      });
-
-      invalidScopes.forEach((scope) => {
-        expect(['EVENT', 'USER', 'ITEM'].includes(scope)).toBe(false);
-      });
-    });
+    expect(result.parameterName).toBe("test_param");
+    expect(result.displayName).toBe("Test Dimension");
   });
 
-  describe('Error Scenarios', () => {
-    it('should handle 404 Not Found (invalid property)', async () => {
-      const mockCreate =
-        mockAnalyticsAdminClient.properties.customDimensions.create;
+  it("passes through custom scope values", async () => {
+    const client = new FakeAnalyticsAdmin();
 
-      mockCreate.mockRejectedValueOnce({
-        code: 404,
-        message: 'Property not found',
-      });
-
-      await expect(
-        mockCreate({
-          parent: 'properties/999999',
-          requestBody: {},
-        })
-      ).rejects.toMatchObject({
-        code: 404,
-      });
+    await createCustomDimension(asClient(client), {
+      ...baseArgs,
+      scope: "USER",
     });
 
-    it('should handle 403 Forbidden (insufficient permissions)', async () => {
-      const mockCreate =
-        mockAnalyticsAdminClient.properties.customDimensions.create;
+    expect(client.customDimensionsCreateCalls[0].requestBody.scope).toBe(
+      "USER",
+    );
+  });
 
-      mockCreate.mockRejectedValueOnce({
-        code: 403,
-        message: 'Insufficient permissions',
-      });
+  it("propagates API errors", async () => {
+    const client = new FakeAnalyticsAdmin();
+    const apiError = { code: 409, message: "Duplicate dimension" };
+    client.setNextCustomDimensionError(apiError);
 
-      await expect(
-        mockCreate({
-          parent: 'properties/123456',
-          requestBody: {},
-        })
-      ).rejects.toMatchObject({
-        code: 403,
-      });
+    await expect(
+      createCustomDimension(asClient(client), baseArgs),
+    ).rejects.toBe(apiError);
+  });
+});
+
+describe("createConversionEvent", () => {
+  const baseArgs: CreateConversionEventArgs = {
+    propertyId: "123456",
+    eventName: "purchase_completed",
+  };
+
+  it("marks an event as conversion", async () => {
+    const client = new FakeAnalyticsAdmin();
+
+    const result = await createConversionEvent(asClient(client), baseArgs);
+
+    expect(client.conversionEventsCreateCalls).toHaveLength(1);
+    expect(client.conversionEventsCreateCalls[0]).toEqual({
+      parent: "properties/123456",
+      requestBody: {
+        eventName: "purchase_completed",
+      },
     });
+    expect(result.eventName).toBe("test_conversion");
+    expect(result.custom).toBe(true);
+  });
 
-    it('should handle 500 Internal Server Error', async () => {
-      const mockCreate =
-        mockAnalyticsAdminClient.properties.customDimensions.create;
+  it("propagates API errors", async () => {
+    const client = new FakeAnalyticsAdmin();
+    const apiError = { code: 409, message: "Event already conversion" };
+    client.setNextConversionEventError(apiError);
 
-      mockCreate.mockRejectedValueOnce({
-        code: 500,
-        message: 'Internal server error',
-      });
+    await expect(
+      createConversionEvent(asClient(client), baseArgs),
+    ).rejects.toBe(apiError);
+  });
+});
 
-      await expect(
-        mockCreate({
-          parent: 'properties/123456',
-          requestBody: {},
-        })
-      ).rejects.toMatchObject({
-        code: 500,
-      });
+describe("listCustomDimensions", () => {
+  const args: ListResourceArgs = { propertyId: "123456" };
+
+  it("returns mapped custom dimensions", async () => {
+    const client = new FakeAnalyticsAdmin();
+
+    const result = await listCustomDimensions(asClient(client), args);
+
+    expect(client.customDimensionsListCalls).toHaveLength(1);
+    expect(client.customDimensionsListCalls[0]).toEqual({
+      parent: "properties/123456",
     });
+    expect(result.dimensions).toHaveLength(1);
+    expect(result.dimensions[0]).toMatchObject({
+      parameterName: "test_param",
+      displayName: "Test Dimension",
+      scope: "EVENT",
+    });
+    expect(result.nextPageToken).toBeNull();
+  });
+
+  it("handles empty responses", async () => {
+    const client = new FakeAnalyticsAdmin();
+    client.customDimensionsListData = [];
+
+    const result = await listCustomDimensions(asClient(client), args);
+
+    expect(result.dimensions).toHaveLength(0);
+  });
+});
+
+describe("listConversionEvents", () => {
+  const args: ListResourceArgs = { propertyId: "123456" };
+
+  it("returns mapped conversion events", async () => {
+    const client = new FakeAnalyticsAdmin();
+
+    const result = await listConversionEvents(asClient(client), args);
+
+    expect(client.conversionEventsListCalls).toHaveLength(1);
+    expect(client.conversionEventsListCalls[0]).toEqual({
+      parent: "properties/123456",
+    });
+    expect(result.events).toHaveLength(1);
+    expect(result.events[0]).toMatchObject({
+      eventName: "test_conversion",
+      deletable: true,
+    });
+    expect(result.nextPageToken).toBeNull();
+  });
+
+  it("handles empty conversion lists", async () => {
+    const client = new FakeAnalyticsAdmin();
+    client.conversionEventsListData = [];
+
+    const result = await listConversionEvents(asClient(client), args);
+
+    expect(result.events).toHaveLength(0);
   });
 });
