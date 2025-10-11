@@ -17,6 +17,8 @@ export interface CreateConversionEventArgs {
 
 export interface ListResourceArgs {
   propertyId: string;
+  pageSize?: number;
+  pageToken?: string;
 }
 
 export async function resolvePropertyId(
@@ -108,10 +110,25 @@ export async function listCustomDimensions(
   analyticsadmin: AnalyticsAdminClient,
   args: ListResourceArgs,
 ) {
-  const propertyPath = await resolvePropertyId(analyticsadmin, args.propertyId);
-  const response = await analyticsadmin.properties.customDimensions.list({
+  const { propertyId, pageSize, pageToken } = args;
+  const propertyPath = await resolvePropertyId(analyticsadmin, propertyId);
+  const request: {
+    parent: string;
+    pageSize?: number;
+    pageToken?: string;
+  } = {
     parent: propertyPath,
-  });
+  };
+
+  if (pageSize !== undefined) {
+    request.pageSize = pageSize;
+  }
+  if (pageToken !== undefined) {
+    request.pageToken = pageToken;
+  }
+
+  const response =
+    await analyticsadmin.properties.customDimensions.list(request);
 
   const dimensions = response.data.customDimensions ?? [];
 
@@ -131,10 +148,25 @@ export async function listConversionEvents(
   analyticsadmin: AnalyticsAdminClient,
   args: ListResourceArgs,
 ) {
-  const propertyPath = await resolvePropertyId(analyticsadmin, args.propertyId);
-  const response = await analyticsadmin.properties.conversionEvents.list({
+  const { propertyId, pageSize, pageToken } = args;
+  const propertyPath = await resolvePropertyId(analyticsadmin, propertyId);
+  const request: {
+    parent: string;
+    pageSize?: number;
+    pageToken?: string;
+  } = {
     parent: propertyPath,
-  });
+  };
+
+  if (pageSize !== undefined) {
+    request.pageSize = pageSize;
+  }
+  if (pageToken !== undefined) {
+    request.pageToken = pageToken;
+  }
+
+  const response =
+    await analyticsadmin.properties.conversionEvents.list(request);
 
   const events = response.data.conversionEvents ?? [];
 

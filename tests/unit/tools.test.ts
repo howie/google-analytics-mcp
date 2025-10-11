@@ -347,6 +347,23 @@ describe("listCustomDimensions", () => {
 
     expect(result.dimensions).toHaveLength(0);
   });
+
+  it("forwards pagination arguments to the API", async () => {
+    const client = new FakeAnalyticsAdmin();
+
+    await listCustomDimensions(asClient(client), {
+      propertyId: "123456",
+      pageSize: 25,
+      pageToken: "next-token",
+    });
+
+    expect(client.customDimensionsListCalls).toHaveLength(1);
+    expect(client.customDimensionsListCalls[0]).toEqual({
+      parent: "properties/123456",
+      pageSize: 25,
+      pageToken: "next-token",
+    });
+  });
 });
 
 describe("listConversionEvents", () => {
@@ -376,5 +393,22 @@ describe("listConversionEvents", () => {
     const result = await listConversionEvents(asClient(client), args);
 
     expect(result.events).toHaveLength(0);
+  });
+
+  it("forwards pagination arguments to the API", async () => {
+    const client = new FakeAnalyticsAdmin();
+
+    await listConversionEvents(asClient(client), {
+      propertyId: "123456",
+      pageSize: 50,
+      pageToken: "second-page",
+    });
+
+    expect(client.conversionEventsListCalls).toHaveLength(1);
+    expect(client.conversionEventsListCalls[0]).toEqual({
+      parent: "properties/123456",
+      pageSize: 50,
+      pageToken: "second-page",
+    });
   });
 });

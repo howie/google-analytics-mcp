@@ -109,17 +109,25 @@ Create a conversion event named "user_signup_complete" in GA4 property G-859X61K
 
 ```typescript
 {
-  propertyId: "G-859X61KC45"
+  propertyId: "G-859X61KC45";
+  pageSize?: number;
+  pageToken?: string;
 }
 ```
+
+Use `pageToken` from a previous response to continue pagination when a property has many custom dimensions.
 
 ### 4. `list_conversion_events`
 
 ```typescript
 {
-  propertyId: "G-859X61KC45"
+  propertyId: "G-859X61KC45";
+  pageSize?: number;
+  pageToken?: string;
 }
 ```
+
+Set `pageSize` to control batch size and pass `pageToken` to fetch subsequent pages.
 
 ## Example prompt
 
@@ -148,6 +156,10 @@ Claude will orchestrate the necessary MCP calls to complete the setup.
 - 🤖 Natural-language friendly
 - 📝 Seamless Claude Code integration
 - 🔧 Designed for future expansion
+
+## Known limitations
+
+- `resolvePropertyId` currently inspects only the first page of account summaries and data streams (max ~50 of each). For organizations with larger inventories, supply the numeric property ID (e.g. `123456789`) instead of a measurement ID to avoid lookup failures.
 
 ## Architecture
 
